@@ -1,0 +1,5 @@
+# Files produced by us
+/libasm.so
+/obj/
+/tests/asmminilibc/obj/
+/tests/asmminilibc/tests_binary
