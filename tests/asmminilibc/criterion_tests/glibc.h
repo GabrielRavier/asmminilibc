@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2021
-** libmy
+** asmminilibc
 ** File description:
 ** Declares glibc-specific test stuff
 */

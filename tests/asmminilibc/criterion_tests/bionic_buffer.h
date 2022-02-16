@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2021
-** libmy
+** asmminilibc
 ** File description:
 ** Defines bionic_buffer stuff
 */

@@ -1,6 +1,6 @@
     section .text
 
-    global strrchr:function (strrchr.end - strchr)
+    global strrchr:function (strrchr.end - strrchr)
     align 16
 strrchr:
     ;; Initialize return value with NULL, i.e. nothing found
