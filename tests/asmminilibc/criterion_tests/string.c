@@ -35,13 +35,19 @@ static char *(*volatile strtok_ptr)(char *restrict, const char *restrict) = strt
 static char *(*volatile strstr_ptr)(const char *, const char *) = strstr;
 
 static void *(*volatile memcpy_ptr)(void *restrict, const void *restrict, size_t) = memcpy;
-static void *(*volatile memmove_ptr)(void *restrict, const void *restrict, size_t) = memmove;
+static void *(*volatile memmove_ptr)(void *, const void *, size_t) = memmove;
+
+static void *(*volatile memccpy_ptr)(void *restrict, const void *restrict, int, size_t) = memccpy;
 
 static void *(*volatile memset_ptr)(void *, int, size_t) = memset;
 
 static int (*volatile memcmp_ptr)(const void *, const void *, size_t) = memcmp;
 
 static void *(*volatile memchr_ptr)(const void *, int, size_t) = memchr;
+
+static void (*volatile bcopy_ptr)(const void *, void *, size_t) = bcopy;
+static void (*volatile bzero_ptr)(void *, size_t) = bzero;
+static int (*volatile bcmp_ptr)(const void *, const void *, size_t) = bcmp;
 
 #define picolibc_test(result_var, result, expected)      \
     do {                                                 \
@@ -133,13 +139,16 @@ static void newlib_set(char *target, char character, size_t size)
         target[i] = character;
 }
 
-static void newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(const char *str, const char *expected, size_t length)
+static void newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(const char *str, const char *expected, size_t length)
 {
     cr_assert_eq(strcmp_ptr(str, expected), 0);
     cr_assert_eq(strncmp_ptr(str, expected, length), 0);
     cr_assert_eq(strncmp_ptr(str, expected, length + 1), 0);
     cr_assert_eq(strlen_ptr(str), length);
+    cr_assert_eq(memcmp_ptr(str, expected, length), 0);
     cr_assert_eq(memcmp_ptr(str, expected, length + 1), 0);
+    cr_assert_eq(bcmp_ptr(str, expected, length), 0);
+    cr_assert_eq(bcmp_ptr(str, expected, length + 1), 0);
     cr_assert_eq(strchr_ptr(str, *str), str);
     cr_assert_eq(index_ptr(str, *str), str);
     cr_assert_eq(strchr_ptr(str, '\0'), str + length);
@@ -167,7 +176,7 @@ static void checked_memcpy(void *restrict dest, const void *restrict src, size_t
     cr_assert_eq(memcpy_ptr(dest, src, len), dest);
 }
 
-static void checked_memmove(void *restrict dest, const void *restrict src, size_t len)
+static void checked_memmove(void *dest, const void *src, size_t len)
 {
     cr_assert_eq(memmove_ptr(dest, src, len), dest);
 }
@@ -213,7 +222,7 @@ Test(string, newlib)
     checked_strncat(tmp2, "123", 0);
     checked_strcat(target, "");
 
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "A", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "A", 1);
     cr_assert_null(memchr_ptr(target, 'A', 0));
     cr_assert_eq(memcmp_ptr(target, "J", 0), 0);
     cr_assert_eq(strncmp_ptr(target, "A", 1), 0);
@@ -241,7 +250,7 @@ Test(string, newlib)
     checked_strncpy(tmp2, "X", 2);
     checked_memset(target, tmp2[0], 1);
 
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "X", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "X", 1);
     cr_assert_null(memchr_ptr(target, 'Y', 2));
     cr_assert_null(strchr_ptr(target, 'Y'));
     cr_assert_eq(strcmp_ptr(tmp3, target), 0);
@@ -254,14 +263,14 @@ Test(string, newlib)
     checked_memset(target, 'Y', 2);
 
     target[2] = '\0';
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "YY", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "YY", 2);
     cr_assert_eq(strcmp_ptr(tmp3, target), 0);
     cr_assert_eq(strncmp_ptr(target, tmp3, 3), 0);
     cr_assert_eq(strncmp_ptr(target, tmp3, 4), 0);
     cr_assert_eq(strncmp_ptr(target, tmp3, 2), 0);
 
     checked_strcpy(target, "WW");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "WW", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "WW", 2);
 
     checked_strncpy(target, "XX", 16);
     cr_assert_eq(memcmp_ptr(target, "XX\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16), 0);
@@ -281,7 +290,7 @@ Test(string, newlib)
     char *tmp5 = buffer5;
     tmp5[0] = '\0';
     checked_strncat(tmp5, "123", 2);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "ZZZ", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "ZZZ", 3);
     cr_assert_eq(strcmp_ptr(tmp3, target), 0);
     cr_assert_eq(strcmp_ptr(tmp4, target), 0);
     cr_assert(strncmp_ptr(target, "ZZY", 3) > 0);
@@ -289,7 +298,7 @@ Test(string, newlib)
     cr_assert_eq(memcmp_ptr(tmp5, "12", 3), 0);
 
     target[2] = 'K';
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "ZZK", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "ZZK", 3);
     cr_assert_eq(memcmp_ptr(target, "ZZZ", 2), 0);
     cr_assert(strcmp_ptr(target, "ZZZ") < 0);
     cr_assert(memcmp_ptr(target, "ZZZ", 3) < 0);
@@ -299,7 +308,7 @@ Test(string, newlib)
     cr_assert_eq(strchr_ptr(target, 'K'), target + 2);
 
     checked_strcpy(target, "AAA");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(target, "AAA", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(target, "AAA", 3);
 
     char expected[MAX_1];
     char buffer6[MAX_2];
@@ -353,7 +362,7 @@ Test(string, newlib)
 
                 strchr_ptr(tmp1, second_char);
 
-                newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(tmp1, expected, i);
+                newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(tmp1, expected, i);
                 cr_assert(strcmp_ptr(tmp1, tmp2) < 0);
                 cr_assert(memcmp_ptr(tmp1, tmp2, i) < 0);
                 cr_assert(strncmp_ptr(tmp1, tmp2, i + 1) < 0);
@@ -384,102 +393,102 @@ Test(string, newlib)
 
 Test(string, newlib_libm)
 {
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr("", "", 0);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr("a", "a", 1);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr("abc", "abc", 3);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr("abcd", "abcd", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr("", "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr("a", "a", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr("abc", "abc", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr("abcd", "abcd", 4);
     cr_assert(strcmp_ptr("abc", "abcd") < 0);
     cr_assert(strcmp_ptr("abcd", "abc") > 0);
-    cr_assert(strcmp_ptr("abce", "abcd") < 0);
-    cr_assert(strcmp_ptr("abcd", "abce") > 0);
+    cr_assert(strcmp_ptr("abcd", "abce") < 0);
+    cr_assert(strcmp_ptr("abce", "abcd") > 0);
     cr_assert(strcmp_ptr("a\103", "a") > 0);
     cr_assert(strcmp_ptr("a\103", "a\003") > 0);
 
     char one[50];
     checked_strcpy(one, "abcd");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "abcd", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcd", 4);
 
     checked_strcpy(one, "x");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "x", 1);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "cd", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "x", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 2, "cd", 2);
 
     char two[50];
     checked_strcpy(two, "hi there");
     checked_strcpy(one, two);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "hi there", 8);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(two, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "hi there", 8);
 
     checked_strcpy(one, "");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "", 0);
 
     checked_strcpy(one, "ijk");
     checked_strcat(one, "lmn");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "ijklmn", 6);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ijklmn", 6);
 
     checked_strcpy(one, "x");
     checked_strcat(one, "yz");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "xyz", 3);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 4, "mn", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "xyz", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 4, "mn", 2);
 
     checked_strcpy(one, "gh");
     checked_strcpy(two, "ef");
     checked_strcat(one, two);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "ghef", 4);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(two, "ef", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ghef", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "ef", 2);
 
     checked_strcpy(one, "");
     checked_strcat(one, "");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "", 0);
 
     checked_strcpy(one, "ab");
     checked_strcat(one, "");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "ab", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ab", 2);
 
     checked_strcpy(one, "");
     checked_strcat(one, "cd");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "cd", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "cd", 2);
 
     checked_strcpy(one, "ijk");
     checked_strncat(one, "lmn", 99);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "ijklmn", 6);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ijklmn", 6);
 
     checked_strcpy(one, "x");
     checked_strncat(one, "yz", 99);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "xyz", 3);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 4, "mn", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "xyz", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 4, "mn", 2);
 
     checked_strcpy(one, "gh");
     checked_strcpy(two, "ef");
     checked_strncat(one, two, 99);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "ghef", 4);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(two, "ef", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ghef", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "ef", 2);
 
     checked_strcpy(one, "");
     checked_strncat(one, "", 99);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "", 0);
 
     checked_strcpy(one, "ab");
     checked_strncat(one, "", 99);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "ab", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ab", 2);
 
     checked_strcpy(one, "");
     checked_strncat(one, "cd", 99);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "cd", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "cd", 2);
 
     checked_strcpy(one, "ab");
     checked_strncat(one, "cdef", 2);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "abcd", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcd", 4);
 
     checked_strncat(one, "gh", 0);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "abcd", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcd", 4);
 
     checked_strncat(one, "gh", 2);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "abcdgh", 6);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcdgh", 6);
 
     cr_assert(strncmp_ptr("abc", "abcd", 99) < 0);
     cr_assert(strncmp_ptr("abcd", "abc", 99) > 0);
-    cr_assert(strncmp_ptr("abce", "abcd", 99) < 0);
-    cr_assert(strncmp_ptr("abcd", "abce", 99) > 0);
+    cr_assert(strncmp_ptr("abcd", "abce", 99) < 0);
+    cr_assert(strncmp_ptr("abce", "abcd", 99) > 0);
     cr_assert(strncmp_ptr("a\103", "a", 99) > 0);
     cr_assert(strncmp_ptr("a\103", "a\003", 99) > 0);
 
@@ -489,40 +498,40 @@ Test(string, newlib_libm)
     cr_assert_eq(strncmp_ptr("abc", "def", 0), 0);
 
     checked_strncpy(one, "abc", 4);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "abc", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
 
     checked_strcpy(one, "abcdefgh");
     checked_strncpy(one, "xyz", 2);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "xycdefgh", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "xycdefgh", 8);
 
     checked_strcpy(one, "abcdefgh");
     checked_strncpy(one, "xyz", 3);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "xyzdefgh", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "xyzdefgh", 8);
 
     checked_strcpy(one, "abcdefgh");
     checked_strncpy(one, "xyz", 4);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "xyz", 3);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 4, "efgh", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "xyz", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 4, "efgh", 4);
 
     checked_strcpy(one, "abcdefgh");
     checked_strncpy(one, "xyz", 5);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "xyz", 3);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 4, "", 0);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 5, "fgh", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "xyz", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 4, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 5, "fgh", 3);
 
     checked_strcpy(one, "abc");
     checked_strncpy(one, "xyz", 0);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "abc", 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
 
     checked_strncpy(one, "", 2);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "", 0);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 1, "", 0);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one + 2, "c", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 1, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 2, "c", 1);
 
     checked_strcpy(one, "hi there");
     checked_strncpy(two, one, 9);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(two, "hi there", 8);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "hi there", 8);
 
     cr_assert_null(strchr_ptr("abcd", 'z'));
     checked_strcpy(one, "abcd");
@@ -644,13 +653,213 @@ Test(string, newlib_libm)
     cr_assert_eq(strcspn_ptr("abc", ""), 3);
 
     checked_strcpy(one, "first, second, third");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(strtok_ptr(one, ", "), "first", 5);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(one, "first", 5);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "second", 6);
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "third", 5);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ", "), "first", 5);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "first", 5);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "second", 6);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "third", 5);
     cr_assert_null(strtok_ptr(NULL, ", "));
 
     checked_strcpy(one, ", first, ");
-    newlib_check_strcmp_strncmp_strlen_memcmp_strchr_index_memchr(strtok_ptr(one, ", "), "first", 5);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ", "), "first", 5);
     cr_assert_null(strtok_ptr(NULL, ", "));
+
+    checked_strcpy(one, "1a, 1b; 2a, 2b");
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ", "), "1a", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, "; "), "1b", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "2a", 2);
+
+    checked_strcpy(two, "x-y");
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(two, "-"), "x", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, "-"), "y", 1);
+    cr_assert_null(strtok_ptr(NULL, "-"));
+
+    checked_strcpy(one, "a,b, c,, ,d");
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ", "), "a", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "b", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "c", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ", "), "d", 1);
+    cr_assert_null(strtok_ptr(NULL, ", "));
+    cr_assert_null(strtok_ptr(NULL, ", "));
+
+    checked_strcpy(one, ", ");
+    cr_assert_eq(strtok_ptr(one, ", "), NULL);
+
+    checked_strcpy(one, "");
+    cr_assert_eq(strtok_ptr(one, ", "), NULL);
+
+    checked_strcpy(one, "abc");
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ", "), "abc", 3);
+    cr_assert_null(strtok_ptr(NULL, ", "));
+
+    checked_strcpy(one, "abc");
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ""), "abc", 3);
+    cr_assert_null(strtok_ptr(NULL, ""));
+
+    checked_strcpy(one, "abcdefgh");
+    checked_strcpy(one, "a,b,c");
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(one, ","), "a", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ","), "b", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(strtok_ptr(NULL, ","), "c", 1);
+    cr_assert_null(strtok_ptr(NULL, ","));
+
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 6, "gh", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "a", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 2, "b", 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 4, "c", 1);
+
+    cr_assert(memcmp_ptr("abcd", "abce", 4) < 0);
+    cr_assert(memcmp_ptr("abce", "abcd", 4) > 0);
+    cr_assert(memcmp_ptr("alph", "beta", 4) < 0);
+    cr_assert_eq(memcmp_ptr("abce", "abcd", 3), 0);
+    cr_assert_eq(memcmp_ptr("abc", "def", 0), 0);
+
+    one[0] = 0xFE;
+    two[0] = 0x03;
+    cr_assert(memcmp_ptr(one, two, 1) > 0);
+
+    cr_assert_null(memchr_ptr("abcd", 'z', 4));
+
+    checked_strcpy(one, "abcd");
+    cr_assert_eq(memchr_ptr(one, 'c', 4), one + 2);
+    cr_assert_eq(memchr_ptr(one, 'd', 4), one + 3);
+    cr_assert_eq(memchr_ptr(one, 'a', 4), one);
+    cr_assert_eq(memchr_ptr(one, '\0', 5), one + 4);
+
+    checked_strcpy(one, "ababa");
+    cr_assert_eq(memchr_ptr(one, 'b', 5), one + 1);
+    cr_assert_null(memchr_ptr(one, 'b', 0));
+    cr_assert_eq(memchr_ptr(one, 'a', 1), one);
+
+    checked_strcpy(one, "a\203b");
+    cr_assert_eq(memchr_ptr(one, 0203, 3), one + 1);
+
+    checked_memcpy(one, "abc", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_memcpy(one + 1, "xyz", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axydefgh", 8);
+
+    checked_strcpy(one, "abc");
+    checked_memcpy(one, "xyz", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "hi there");
+    checked_strcpy(two, "foo");
+    checked_memcpy(two, one, 9);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "hi there", 8);
+
+    checked_memmove(one, "abc", 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_memmove(one + 1, "xyz", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axydefgh", 8);
+
+    checked_strcpy(one, "abc");
+    checked_memmove(one, "xyz", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "hi there");
+    checked_strcpy(two, "foo");
+    checked_memmove(two, one, 9);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "hi there", 8);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_memmove(one + 1, one, 9);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "aabcdefgh", 9);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_memmove(one + 1, one + 2, 7);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "acdefgh", 7);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_memmove(one, one, 9);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcdefgh", 8);
+
+    cr_assert_null(memccpy_ptr(one, "abc", 'q', 4));
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "abcdefgh");
+    memccpy_ptr(one + 1, "xyz", 'q', 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axydefgh", 8);
+
+    checked_strcpy(one, "abc");
+    memccpy_ptr(one, "xyz", 'q', 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "hi there");
+    checked_strcpy(two, "foo");
+    memccpy_ptr(two, one, 'q', 9);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "hi there", 8);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_strcpy(two, "horsefeathers");
+    cr_assert_eq(memccpy_ptr(two, one, 'f', 9), two + 6);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcdefgh", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "abcdefeathers", 13);
+
+    checked_strcpy(one, "abcd");
+    checked_strcpy(two, "bumblebee");
+    cr_assert_eq(memccpy_ptr(two, one, 'a', 4), two + 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "aumblebee", 9);
+
+    cr_assert_eq(memccpy_ptr(two, one, 'd', 4), two + 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "abcdlebee", 9);
+
+    checked_strcpy(one, "xyz");
+    cr_assert_eq(memccpy_ptr(two, one, 'x', 1), two + 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "xbcdlebee", 9);
+
+    checked_strcpy(one, "abcdefgh");
+    checked_memset(one + 1, 'x', 3);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axxxefgh", 8);
+
+    checked_memset(one + 2, 'y', 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axxxefgh", 8);
+
+    checked_memset(one + 5, 0, 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axxxe", 5);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 6, "gh", 2);
+
+    checked_memset(one + 2, 010045, 1);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ax\045xe", 5);
+
+    bcopy_ptr("abc", one, 4);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "abcdefgh");
+    bcopy_ptr("xyz", one + 1, 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "axydefgh", 8);
+
+    checked_strcpy(one, "abc");
+    bcopy_ptr("xyz", one, 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abc", 3);
+
+    checked_strcpy(one, "hi there");
+    checked_strcpy(two, "foo");
+    bcopy_ptr(one, two, 9);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(two, "hi there", 8);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "hi there", 8);
+
+    checked_strcpy(one, "abcdef");
+    bzero_ptr(one + 2, 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "ab", 2);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 3, "", 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one + 4, "ef", 2);
+
+    checked_strcpy(one, "abcdef");
+    bzero_ptr(one + 2, 0);
+    newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(one, "abcdef", 6);
+
+    cr_assert_eq(bcmp_ptr("a", "a", 1), 0);
+    cr_assert_eq(bcmp_ptr("abc", "abc", 3), 0);
+    cr_assert_neq(bcmp_ptr("abcd", "abce", 4), 0);
+    cr_assert_neq(bcmp_ptr("abce", "abcd", 4), 0);
+    cr_assert_neq(bcmp_ptr("alph", "beta", 4), 0);
+    cr_assert_eq(bcmp_ptr("abce", "abcd", 3), 0);
+    cr_assert_eq(bcmp_ptr("abc", "def", 0), 0);
 }
