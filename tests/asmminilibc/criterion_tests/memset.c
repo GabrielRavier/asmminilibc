@@ -205,7 +205,7 @@ Test(memset, bionic)
     struct bionic_test_state state = bionic_test_state_new(64 * 1024);
     char character = 'P';
 
-    for (size_t i = 0; i < (state.n - 1) / 2; ++i)
+    for (size_t i = 0; i < (state.n - 1); ++i) {
         for (bionic_test_state_begin_iters(&state); bionic_test_state_has_next_iter(&state); bionic_test_state_next_iter(&state)) {
             checked_memset(state.ptr1, ~character, state.max_length);
             memcpy(state.ptr2, state.ptr1, state.max_length);
@@ -217,6 +217,8 @@ Test(memset, bionic)
             checked_memset(state.ptr2 + position, character, state.lengths[i]);
             cr_assert_eq(memcmp(state.ptr1, state.ptr2, state.max_length), 0);
         }
+        i += random() % 15;
+    }
 }
 
 static void bionic_do_memset_test(uint8_t *buffer, size_t length)
@@ -266,7 +268,7 @@ Test(memset, glibc_random)
     for (size_t i = 0; i < 65536; ++i)
         ptr2[i] = random() % CHAR_MAX;
 
-    for (size_t n = 0; n < 100000; ++n) {
+    for (size_t n = 0; n < 50000; ++n) {
         size_t size;
         if ((random() & 31) == 0)
             size = 65536;
