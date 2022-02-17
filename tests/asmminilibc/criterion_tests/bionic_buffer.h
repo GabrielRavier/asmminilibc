@@ -173,6 +173,11 @@ static inline size_t bionic_buffer_set_increase(size_t length)
     return length >= 4096 ? 1024 : length >= 1024 ? 256 : 1;
 }
 
+static inline size_t bionic_buffer_large_set_increment(size_t length)
+{
+    return length >= 4096 ? 4096 : length >= 1024 ? 1024 : length >= 256 ? 256 : 1;
+}
+
 static inline void *bionic_buffer_get_aligned_ptr(void *original_ptr, int alignment, int or_mask)
 {
     uintptr_t ptr_as_int = (uintptr_t)original_ptr;

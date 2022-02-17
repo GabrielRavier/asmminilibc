@@ -217,7 +217,7 @@ Test(memset, bionic)
             checked_memset(state.ptr2 + position, character, state.lengths[i]);
             cr_assert_eq(memcmp(state.ptr1, state.ptr2, state.max_length), 0);
         }
-        i += random() % 15;
+        i += random() % 20;
     }
 }
 
@@ -228,7 +228,8 @@ static void bionic_do_memset_test(uint8_t *buffer, size_t length)
     int value = (length % 255) + 1;
     checked_memset(buffer, value, length);
     for (size_t i = 0; i < length; ++i)
-        cr_assert_eq(buffer[i], value);
+        if (buffer[i] != value)
+            cr_assert_fail("Invalid value %d ! Expected %d", buffer[i], value);
 }
 
 Test(memset, bionic_align)
@@ -268,7 +269,7 @@ Test(memset, glibc_random)
     for (size_t i = 0; i < 65536; ++i)
         ptr2[i] = random() % CHAR_MAX;
 
-    for (size_t n = 0; n < 50000; ++n) {
+    for (size_t n = 0; n < 30000; ++n) {
         size_t size;
         if ((random() & 31) == 0)
             size = 65536;

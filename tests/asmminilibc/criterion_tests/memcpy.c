@@ -18,7 +18,6 @@
 
 static void *(*volatile memcpy_ptr)(void *restrict, const void *restrict, size_t) = memcpy;
 
-
 static void checked_memcpy(void *dest, const void *src, size_t len)
 {
     cr_assert_eq(memcpy_ptr(dest, src, len), dest);
@@ -75,7 +74,7 @@ Test(memcpy, bionic)
             checked_memcpy(state.ptr2 + position, state.ptr1 + position, state.lengths[i]);
             cr_assert_eq(memcmp(state.ptr1, state.ptr2, state.max_length), 0);
         }
-        i += random() % 10;
+        i += random() % 15;
     }
 }
 
@@ -189,7 +188,7 @@ static void glibc_do_test(size_t alignment1, size_t alignment2, size_t length)
     }
 }
 
-Test(memcpy, glibc_random_tests)
+Test(memcpy, glibc_random)
 {
     glibc_test_string_init();
 
@@ -370,5 +369,61 @@ Test(memcpy, glibc)
             glibc_do_test1(0, j + 1, i);
             glibc_do_test1(4095, j + 1, i);
             glibc_do_test1(4096 - j, 1, i);
+        }
+}
+
+Test(memcpy, glibc_random_large)
+{
+    glibc_test_string_init();
+
+    for (size_t i = 0; i < 10; ++i)
+        glibc_do_test1(random(), random(), (random() % 0x1000000) + 0x200000);
+    for (size_t i = 0; i < 20; ++i)
+        glibc_do_test1(random(), random(), (random() % 32768) + 4096);
+}
+
+Test(memcpy, glibc_large)
+{
+    glibc_test_string_init();
+
+    glibc_do_test(0, 0, getpagesize() - 1);
+
+    for (size_t i = 0x200000; i <= 0x2000000; i <<= 1 + (random() % 20))
+        for (size_t j = 64; j <= 1024; j <<= 1 + (random() % 20)) {
+            glibc_do_test1(0, j, i);
+            glibc_do_test1(4095, j, i);
+            glibc_do_test1(4096 - j, 0, i);
+            
+            glibc_do_test1(0, j - 1, i);
+            glibc_do_test1(4095, j - 1, i);
+            glibc_do_test1(4096 - j - 1, 0, i);
+            
+            glibc_do_test1(0, j + 1, i);
+            glibc_do_test1(4095, j + 1, i);
+            glibc_do_test1(4096 - j, 1, i);
+            
+            glibc_do_test1(0, j, i + 1);
+            glibc_do_test1(4095, j, i + 1);
+            glibc_do_test1(4096 - j, 0, i + 1);
+            
+            glibc_do_test1(0, j - 1, i + 1);
+            glibc_do_test1(4095, j - 1, i + 1);
+            glibc_do_test1(4096 - j - 1, 0, i + 1);
+            
+            glibc_do_test1(0, j + 1, i + 1);
+            glibc_do_test1(4095, j + 1, i + 1);
+            glibc_do_test1(4096 - j, 1, i + 1);
+            
+            glibc_do_test1(0, j, i - 1);
+            glibc_do_test1(4095, j, i - 1);
+            glibc_do_test1(4096 - j, 0, i - 1);
+            
+            glibc_do_test1(0, j - 1, i - 1);
+            glibc_do_test1(4095, j - 1, i - 1);
+            glibc_do_test1(4096 - j - 1, 0, i - 1);
+            
+            glibc_do_test1(0, j + 1, i - 1);
+            glibc_do_test1(4095, j + 1, i - 1);
+            glibc_do_test1(4096 - j, 1, i - 1);
         }
 }
