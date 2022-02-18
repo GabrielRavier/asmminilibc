@@ -19,7 +19,7 @@ static size_t glibc_page_size;
     #define GLIBC_BUF1PAGES 1
 #endif
 
-static void glibc_test_string_init(void)
+static inline void glibc_test_string_init(void)
 {
     glibc_page_size = 2 * getpagesize();
 #ifdef GLIBC_MIN_PAGE_SIZE

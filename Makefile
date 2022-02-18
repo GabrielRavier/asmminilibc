@@ -53,8 +53,8 @@ BINARY_NAME := libasm.so
 all: $(BINARY_NAME)
 
 # Program sources files
-SOURCE_FILES := strlen strchr strrchr memset strcmp memmove #strncmp
-#SOURCE_FILES += strcasecmp strstr strpbrk strcspn
+SOURCE_FILES := strlen strchr strrchr memset strcmp memmove strncmp
+SOURCE_FILES += strcasecmp strstr strpbrk #strcspn
 
 # Extras
 # SOURCE_FILES += ffs syscall strfry index rindex strtok memfrob
