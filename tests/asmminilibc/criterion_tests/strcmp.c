@@ -159,6 +159,7 @@ Test(strcmp, bionic)
             }
             check_result(state.ptr1, state.ptr2, expected_result);
         }
+    bionic_test_state_destroy(&state);
 }
 
 static void bionic_do_test(uint8_t *buffer1, uint8_t *buffer2, size_t length)

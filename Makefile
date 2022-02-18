@@ -53,7 +53,7 @@ BINARY_NAME := libasm.so
 all: $(BINARY_NAME)
 
 # Program sources files
-SOURCE_FILES := strlen strchr strrchr memset memcpy strcmp #memmove strncmp
+SOURCE_FILES := strlen strchr strrchr memset strcmp memmove #strncmp
 #SOURCE_FILES += strcasecmp strstr strpbrk strcspn
 
 # Extras
@@ -67,7 +67,7 @@ $(BINARY_NAME): $(OBJECT_FILES)
 
 obj/src/%.o: src/%.asm
 > @mkdir --parents obj/src/
-> nasm -felf64 -g $< -o $@
+> nasm -felf64 -gdwarf $< -o $@
 
 # Include dependencies for the object files
 include $(shell [ -d obj ] && find obj/ -type f -name '*.d')
@@ -95,4 +95,4 @@ tests_run: make_tests_binary
 > $(MAKE) clean
 > $(MAKE) CFLAGS="$(CFLAGS) --coverage"
 > ./tests/$(PROJECT_NAME)/script_test.sh & \
-    LD_PRELOAD=$(realpath $(BINARY_NAME)) timeout 5 ./tests/$(PROJECT_NAME)/tests_binary & wait
+    LD_PRELOAD=$(realpath $(BINARY_NAME)) timeout 10 ./tests/$(PROJECT_NAME)/tests_binary & wait

@@ -350,6 +350,7 @@ Test(strchr, bionic)
             cr_assert_eq(strchr_ptr(state.ptr1, seek_char), expected);
         }
     }
+    bionic_test_state_destroy(&state);
 }
 
 static void bionic_do_strchr_test(uint8_t *buffer, size_t length)

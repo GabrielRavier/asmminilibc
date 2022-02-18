@@ -219,6 +219,7 @@ Test(memset, bionic)
         }
         i += random() % 20;
     }
+    bionic_test_state_destroy(&state);
 }
 
 static void bionic_do_memset_test(uint8_t *buffer, size_t length)

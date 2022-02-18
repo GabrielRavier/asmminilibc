@@ -76,6 +76,7 @@ Test(memcpy, bionic)
         }
         i += random() % 15;
     }
+    bionic_test_state_destroy(&state);
 }
 
 static void bionic_do_memcpy_test(uint8_t *source, uint8_t *destination, size_t length)
@@ -295,7 +296,12 @@ static void glibc_do_test1(size_t alignment1, size_t alignment2, size_t size)
 
         memset(destination, -1, size);
         checked_memcpy(destination, source, size);
-        cr_assert_eq(memcmp(source, destination, size), 0);
+        if (memcmp(source, destination, size) != 0) {
+            for (size_t i = 0; i < size; ++i)
+                if (((char *)source)[i] != ((char *)destination)[i])
+                    cr_expect_fail("Failure at index %zu: %d != %d", i, ((char *)source)[i], ((char *)destination)[i]);
+            cr_assert_fail("Failure to copy %zu from %p to %p (see above)", size, (void *)source, (void *)destination);
+        }
 
         destination = large_buffer + region_size + 2 * glibc_page_size + alignment1;
         source = large_buffer + alignment1;
