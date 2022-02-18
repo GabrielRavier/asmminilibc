@@ -10,6 +10,7 @@
 #include <criterion/criterion.h>
 #include "glibc.h"
 #include "gnulib.h"
+#include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
 
@@ -246,32 +247,9 @@ Test(strstr, glibc_pr23637)
     check_result(haystack, needle, known_strstr(haystack, needle));
 }
 
-Test(strstr, gnulib)
+// Check that a long periodic needle doesn't result in false matches
+Test(strstr, gnulib_long_periodic_needle)
 {
-    {
-        const char input[] = "foo";
-        check_result(input, "", input);
-        check_result(input, "o", input + 1);
-    }
-
-    {
-        const char *fix = "aBaaaaaaaaaaax";
-        char *page_boundary = gnulib_zerosize_ptr();
-        size_t length = strlen(fix) + 1;
-        char *input = page_boundary - length;
-
-        strcpy(input, fix);
-        check_result(input, "B1x", NULL);
-    }
-
-    {
-        const char input[] = "ABC ABCDAB ABCDABCDABDE";
-        check_result(input, "ABCDABD", input + 15);
-        check_result(input, "ABCDABE", NULL);
-        check_result(input, "ABCDABCD", input + 11);
-    }
-
-    // Check that a long periodic needle doesn't result in false matches
     {
         const char input[] = "F_BD_CE_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_C3_88_20_EF_BF_BD_EF_BF_BD_EF_BF_BD_C3_A7_20_EF_BF_BD";
         const char needle[] = "_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD";
@@ -282,60 +260,69 @@ Test(strstr, gnulib)
         const char needle[] = "_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD";
         check_result(input, needle, input + 115);
     }
+}
 
-    // Check that a very long haystack is handled quickly if the needle is short and occurs near the beginning
-    {
-        size_t m = 1000000;
-        const char *needle = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-        char *haystack = malloc(m + 1);
-        cr_assert_not_null(haystack);
 
-        memset(haystack, 'A', m);
-        haystack[0] = 'B';
-        haystack[m] = '\0';
+// Check that a very long haystack is handled quickly if the needle is short and
+// occurs near the beginning
+Test(strstr, gnulib_very_long_haystack_short_needle)
+{
+    size_t m = 1000000;
+    const char *needle = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    char *haystack = malloc(m + 1);
+    cr_assert_not_null(haystack);
 
-        for (size_t repeat = 10000; repeat > 0; --repeat)
-            check_result(haystack, needle, haystack + 1);
-        free(haystack);
-    }
+    memset(haystack, 'A', m);
+    haystack[0] = 'B';
+    haystack[m] = '\0';
 
-    // Check that a very long needle is discarded quickly if the haystack is short
-    {
-        size_t m = 1000000;
-        const char *haystack = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB";
-        char *needle = malloc(m + 1);
-        cr_assert_not_null(haystack);
+    for (size_t repeat = 10000; repeat > 0; --repeat)
+        check_result(haystack, needle, haystack + 1);
+    free(haystack);
+}
 
-        memset(needle, 'A', m);
-        needle[m] = '\0';
+Test(strstr, gnulib_quadratic_complexity)
+{
+    size_t m = 10000;
+    char *haystack = (char *)malloc(2 * m + 2);
+    char *needle = (char *)malloc(m + 2);
+    cr_assert_not_null(haystack);
+    cr_assert_not_null(needle);
 
-        for (size_t repeat = 10000; repeat > 0; --repeat)
-            check_result(haystack, needle, NULL);
-        free(needle);
-    }
+    memset(haystack, 'A', 2 * m);
+    haystack[2 * m] = 'B';
+    haystack[2 * m + 1] = '\0';
 
-    // Check for non-quadratic worst-case complexity
-    {
-        size_t m = 1000000;
-        char *haystack = (char *)malloc(2 * m + 2);
-        char *needle = (char *)malloc(m + 2);
-        cr_assert_not_null(haystack);
-        cr_assert_not_null(needle);
+    memset(needle, 'A', m);
+    needle[m] = 'B';
+    needle[m + 1] = '\0';
 
-        memset(haystack, 'A', 2 * m);
-        haystack[2 * m] = 'B';
-        haystack[2 * m + 1] = '\0';
+    check_result(haystack, needle, haystack + m);
+    free(needle);
+    free(haystack);
+}
 
-        memset(needle, 'A', m);
-        needle[m] = 'B';
-        needle[m + 1] = '\0';
+// Check that a very long needle is discarded quickly if the haystack is short
+Test(strstr, gnulib_very_long_needle_short_haystack)
+{
+    size_t m = 1000000;
+    const char *haystack = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB";
+    char *needle = malloc(m + 1);
+    cr_assert_not_null(haystack);
 
-        check_result(haystack, needle, haystack + m);
-        free(needle);
-        free(haystack);
-    }
+    memset(needle, 'A', m);
+    needle[m] = '\0';
 
-    // Check that a barely period short needle does not result in mistakenly skipping just past the match point
+    for (size_t repeat = 10000; repeat > 0; --repeat)
+        check_result(haystack, needle, NULL);
+    free(needle);
+}
+
+
+// Check that a barely periodic short needle does not result in mistakenly
+// skipping just past the match point
+Test(strstr, gnulib_barely_periodic_mistake)
+{
     {
         const char *haystack =
             "\n"
@@ -406,25 +393,52 @@ Test(strstr, gnulib)
         }
         free(haystack);
     }
+}
 
-    // Test long needles
-    {
-        size_t m = 1024;
-        char *haystack = malloc(2 * m + 1);
-        char *needle = malloc(m + 1);
-        cr_assert_not_null(haystack);
-        cr_assert_not_null(needle);
+// Test long needles
+Test(strstr, gnulib_long_needles)
+{
+    size_t m = 1024;
+    char *haystack = malloc(2 * m + 1);
+    char *needle = malloc(m + 1);
+    cr_assert_not_null(haystack);
+    cr_assert_not_null(needle);
 
-        haystack[0] = 'x';
-        memset(haystack + 1, ' ', m - 1);
-        memset(haystack + m, 'x', m);
-        haystack[2 * m] = '\0';
+    haystack[0] = 'x';
+    memset(haystack + 1, ' ', m - 1);
+    memset(haystack + m, 'x', m);
+    haystack[2 * m] = '\0';
 
-        memset(needle, 'x', m);
-        needle[m] = '\0';
-        check_result(haystack, needle, haystack + m);
+    memset(needle, 'x', m);
+    needle[m] = '\0';
+    check_result(haystack, needle, haystack + m);
         
-        free(needle);
-        free(haystack);
+    free(needle);
+    free(haystack);
+}
+
+Test(strstr, gnulib)
+{
+    {
+        const char input[] = "foo";
+        check_result(input, "", input);
+        check_result(input, "o", input + 1);
+    }
+
+    {
+        const char *fix = "aBaaaaaaaaaaax";
+        char *page_boundary = gnulib_zerosize_ptr();
+        size_t length = strlen(fix) + 1;
+        char *input = page_boundary - length;
+
+        strcpy(input, fix);
+        check_result(input, "B1x", NULL);
+    }
+
+    {
+        const char input[] = "ABC ABCDAB ABCDABCDABDE";
+        check_result(input, "ABCDABD", input + 15);
+        check_result(input, "ABCDABE", NULL);
+        check_result(input, "ABCDABCD", input + 11);
     }
 }
