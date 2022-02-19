@@ -57,7 +57,7 @@ SOURCE_FILES := strlen strchr strrchr memset strcmp memmove strncmp
 SOURCE_FILES += strcasecmp strstr strpbrk strcspn
 
 # Extras
-# SOURCE_FILES += ffs syscall strfry index rindex strtok memfrob
+SOURCE_FILES += ffs #syscall strfry index rindex strtok memfrob
 # SOURCE_FILES += strscpy
 
 OBJECT_FILES := $(addprefix obj/src/, $(addsuffix .o, $(SOURCE_FILES)))
