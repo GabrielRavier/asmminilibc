@@ -1,7 +1,9 @@
     section .text
 
     global strchr:function (strchr.end - strchr)
+    global index:function (strchr.end - strchr)
     align 16
+index:
 strchr:
     mov rax, rdi
 

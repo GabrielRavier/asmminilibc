@@ -1,7 +1,9 @@
     section .text
 
     global strrchr:function (strrchr.end - strrchr)
+    global rindex:function (strrchr.end - strrchr)
     align 16
+rindex:
 strrchr:
     ;; Initialize return value with NULL, i.e. nothing found
     xor eax, eax

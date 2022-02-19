@@ -57,8 +57,12 @@ SOURCE_FILES := strlen strchr strrchr memset strcmp memmove strncmp
 SOURCE_FILES += strcasecmp strstr strpbrk strcspn
 
 # Extras
-SOURCE_FILES += ffs #syscall strfry index rindex strtok memfrob
-# SOURCE_FILES += strscpy
+SOURCE_FILES += ffs syscall index rindex # memfrob strtok_r
+# SOURCE_FILES += strscpy strlcpy strlcat strncpy strnlen memccpy ntohl htonl
+# SOURCE_FILES += toascii ntohs htons abs getpid getppid getuid geteuid getgid
+# SOURCE_FILES += getegid getpgrp umask gettid mempcpy isascii ldiv lldiv
+# SOURCE_FILES += wmemcpy wmemmove wmempcpy labs llabs bzero div random_r
+# SOURCE_FILES += finitel strcat strncat stpcpy stpncpy
 
 OBJECT_FILES := $(addprefix obj/src/, $(addsuffix .o, $(SOURCE_FILES)))
 
