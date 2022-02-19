@@ -22,39 +22,39 @@ static void glibc_strpbrk_do_test(size_t alignment, size_t position, size_t leng
     if ((alignment + position + 10) >= glibc_page_size || length > 240)
         return;
 
-    char *rej = glibc_buf2 + (random() & 255);
+    char *reject = glibc_buf2 + (random() & 255);
     char *str = glibc_buf1 + alignment;
 
     for (size_t i = 0; i < length; ++i) {
-        rej[i] = random() & CHAR_MAX;
-        if (rej[i] == '\0')
-            rej[i] = random() & CHAR_MAX;
-        if (rej[i] == '\0')
-            rej[i] = 1 + (random() & 127);
+        reject[i] = random() & CHAR_MAX;
+        if (reject[i] == '\0')
+            reject[i] = random() & CHAR_MAX;
+        if (reject[i] == '\0')
+            reject[i] = 1 + (random() & 127);
     }
-    rej[length] = '\0';
+    reject[length] = '\0';
 
     int c;
     for (c = 1; c <= CHAR_MAX; ++c)
-        if (strchr(rej, c) == NULL)
+        if (strchr(reject, c) == NULL)
             break;
 
     for (size_t i = 0; i < position; ++i) {
         str[i] = random() & CHAR_MAX;
-        if (strchr(rej, str[i]) != NULL) {
+        if (strchr(reject, str[i]) != NULL) {
             str[i] = random() & CHAR_MAX;
-            if (strchr(rej, str[i]) != NULL)
+            if (strchr(reject, str[i]) != NULL)
                 str[i] = c;
         }
     }
-    str[position] = rej[random() % (length + 1)];
+    str[position] = reject[random() % (length + 1)];
     if (str[position] != '\0') {
         size_t i;
         for (i = position + 1; i < position + 10; ++i)
             str[i] = random() & CHAR_MAX;
         str[i] = '\0';
     }
-    glibc_strpbrk_check_result(str, rej, GLIBC_STRPBRK_RESULT(str, position));
+    glibc_strpbrk_check_result(str, reject, GLIBC_STRPBRK_RESULT(str, position));
 }
 
 static inline void glibc_strpbrk_test()
@@ -103,19 +103,19 @@ static inline void glibc_strpbrk_test_random()
         else
             r_length = random() & 15;
 
-        unsigned char *rej = (unsigned char *)(glibc_buf2 + glibc_page_size) - r_length - 1 - (random() & 7);
+        unsigned char *reject = (unsigned char *)(glibc_buf2 + glibc_page_size) - r_length - 1 - (random() & 7);
         for (size_t i = 0; i < r_length; ++i) {
-            rej[i] = random() & CHAR_MAX;
-            if (rej[i] == '\0')
-                rej[i] = random() & CHAR_MAX;
-            if (rej[i] == '\0')
-                rej[i] = 1 + (random() & 127);
+            reject[i] = random() & CHAR_MAX;
+            if (reject[i] == '\0')
+                reject[i] = random() & CHAR_MAX;
+            if (reject[i] == '\0')
+                reject[i] = 1 + (random() & 127);
         }
-        rej[r_length] = '\0';
+        reject[r_length] = '\0';
 
         int ch;
         for (ch = 1; ch <= CHAR_MAX; ++ch)
-            if (strchr((char *)rej, ch) == NULL)
+            if (strchr((char *)reject, ch) == NULL)
                 break;
 
         size_t j = (position > length ? position : length) + alignment + 64;
@@ -126,19 +126,19 @@ static inline void glibc_strpbrk_test_random()
             if (i == length + alignment)
                 ptr[i] = '\0';
             else if (i == position + alignment)
-                ptr[i] = rej[random() % (r_length + 1)];
+                ptr[i] = reject[random() % (r_length + 1)];
             else if (i < alignment || i > position + alignment)
                 ptr[i] = random() & CHAR_MAX;
             else {
                 ptr[i] = random() & CHAR_MAX;
-                if (strchr((char *)rej, ptr[i]) != NULL) {
+                if (strchr((char *)reject, ptr[i]) != NULL) {
                     ptr[i] = random() & CHAR_MAX;
-                    if (strchr((char *)rej, ptr[i]) != NULL)
+                    if (strchr((char *)reject, ptr[i]) != NULL)
                         ptr[i] = ch;
                 }
             }
         }
 
-        glibc_strpbrk_check_result((char *)(ptr + alignment), (char *)rej, GLIBC_STRPBRK_RESULT((char *)(ptr + alignment), position < length ? position : length));
+        glibc_strpbrk_check_result((char *)(ptr + alignment), (char *)reject, GLIBC_STRPBRK_RESULT((char *)(ptr + alignment), position < length ? position : length));
     }
 }

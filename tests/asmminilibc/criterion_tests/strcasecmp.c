@@ -105,7 +105,7 @@ Test(strcasecmp, glibc_random)
     unsigned char *ptr1 = (unsigned char *)(glibc_buf1 + glibc_page_size - 512);
     unsigned char *ptr2 = (unsigned char *)(glibc_buf2 + glibc_page_size - 512);
 
-    for (size_t n = 0; n < 100000; ++n) {
+    for (size_t n = 0; n < 50000; ++n) {
         size_t alignment1 = random() & 31;
 
         size_t alignment2;

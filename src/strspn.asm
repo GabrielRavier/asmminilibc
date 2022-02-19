@@ -1,8 +1,8 @@
     section .text
 
-    global strcspn:function (strcspn.end - strcspn)
+    global strspn:function (strspn.end - strspn)
     align 16
-strcspn:
+strspn:
     mov r9b, [rdi]
     mov rax, rdi
     test r9b, r9b
@@ -10,7 +10,7 @@ strcspn:
 
     mov r8b, [rsi]
     test r8b, r8b
-    je .empty_charset
+    je .ret_rax_min_rdi
 
     inc rsi
 
@@ -25,31 +25,20 @@ strcspn:
     align 16
 .inner_loop:
     cmp cl, r9b
-    je .ret_rax_min_rdi
+    je .finish_inner
 
     movzx ecx, byte [rdx]
     inc rdx
     test cl, cl
     jne .inner_loop
+    jmp .ret_rax_min_rdi
 
+.finish_inner:
     inc rax
     mov r9b, [rax]
     test r9b, r9b
     jne .outer_loop
-    jmp .ret_rax_min_rdi
-
-    ;; This is basically just strlen, since there is nothing to search for
-.empty_charset:
-    mov rcx, rdi
-
-    align 16
-.empty_charset_loop:
-    inc rcx
-    cmp byte [rcx], 0
-    jne .empty_charset_loop
     
-    mov rax, rcx
-
 .ret_rax_min_rdi:
     sub rax, rdi
     ret
