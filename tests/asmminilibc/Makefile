@@ -50,7 +50,7 @@ BINARY_NAME := tests_binary
 all: $(BINARY_NAME)
 
 # Program sources files
-SOURCE_FILES := string strlen strchr strrchr memset memcpy strcmp memmove strncmp strcasecmp strstr
+SOURCE_FILES := string strlen strchr strrchr memset memcpy strcmp memmove strncmp strcasecmp strstr strpbrk strcspn
 
 OBJECT_FILES := $(addprefix obj/criterion_tests/, $(addsuffix .o, $(SOURCE_FILES)))
 

@@ -145,6 +145,7 @@ static void newlib_check_strcmp_strncmp_strlen_memcmp_bcmp_strchr_index_memchr(c
     cr_assert_eq(strncmp_ptr(str, expected, length), 0);
     cr_assert_eq(strncmp_ptr(str, expected, length + 1), 0);
     cr_assert_eq(strlen_ptr(str), length);
+    cr_assert_eq(strcspn_ptr(str, ""), length);
     cr_assert_eq(memcmp_ptr(str, expected, length), 0);
     cr_assert_eq(memcmp_ptr(str, expected, length + 1), 0);
     cr_assert_eq(bcmp_ptr(str, expected, length), 0);
