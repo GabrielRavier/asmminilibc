@@ -3,6 +3,7 @@
     global strpbrk:function (strpbrk.end - strpbrk)
     align 16
 strpbrk:
+    ;; If the searched set is empty, then just return NULL
     mov r8b, [rsi]
     test r8b, r8b
     je .ret_0
