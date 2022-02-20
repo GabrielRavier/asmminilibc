@@ -327,7 +327,7 @@ Test(strrchr, glibc_random_tests)
     glibc_test_string_init();
 
     unsigned char *ptr = (unsigned char *)(glibc_buf1 + glibc_page_size) - 512;
-    for (size_t n = 0; n < 50000; ++n) {
+    for (size_t n = 0; n < 25000; ++n) {
         size_t alignment = random() & 63;
         size_t position = random() & 511;
         if (position + alignment >= 511)

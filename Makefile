@@ -57,7 +57,7 @@ SOURCE_FILES := strlen strchr strrchr memset strcmp memmove strncmp
 SOURCE_FILES += strcasecmp strstr strpbrk strcspn
 
 # Extras
-SOURCE_FILES += ffs syscall memfrob strspn #strtok_r strsep
+SOURCE_FILES += ffs syscall memfrob strspn strtok_r strsep
 # SOURCE_FILES += strscpy strlcpy strlcat strncpy strnlen memccpy ntohl htonl
 # SOURCE_FILES += toascii ntohs htons abs getpid getppid getuid geteuid getgid
 # SOURCE_FILES += getegid getpgrp umask gettid mempcpy isascii ldiv lldiv

@@ -445,7 +445,7 @@ Test(strchr, glibc_random_tests)
 
     unsigned char *ptr = (unsigned char *)(glibc_buf1 + glibc_page_size - 512);
 
-    for (size_t n = 0; n < 100000; ++n) {
+    for (size_t n = 0; n < 50000; ++n) {
         size_t alignment = random() & 15;
         size_t position = random() & 511;
         int seek_char = random() & 255;
