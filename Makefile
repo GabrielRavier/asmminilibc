@@ -58,11 +58,15 @@ SOURCE_FILES += strcasecmp strstr strpbrk strcspn
 
 # Extras
 SOURCE_FILES += ffs syscall memfrob strspn strtok_r strsep
-# SOURCE_FILES += strscpy strlcpy strlcat strncpy strnlen memccpy ntohl htonl
+SOURCE_FILES += strncpy #strnlen memccpy ntohl htonl
 # SOURCE_FILES += toascii ntohs htons abs getpid getppid getuid geteuid getgid
 # SOURCE_FILES += getegid getpgrp umask gettid mempcpy isascii ldiv lldiv
 # SOURCE_FILES += wmemcpy wmemmove wmempcpy labs llabs bzero div random_r
 # SOURCE_FILES += finitel strcat strncat stpcpy stpncpy ffsl ffsll
+
+# rest of C89
+# SOURCE_FILES += srand memchr memcmp frexp modf floor ceil fabs
+# SOURCE_FILES += qsort_r qsort strtok srand rand bsearch rand
 
 OBJECT_FILES := $(addprefix obj/src/, $(addsuffix .o, $(SOURCE_FILES)))
 

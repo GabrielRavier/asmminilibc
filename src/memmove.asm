@@ -131,7 +131,7 @@ memmove:
     ;; We check for destination == source relatively late considering how uncommon it is, but it is still valuable to avoid doing useless copying
     je .ret
 
-    ;; destination > source. We now check for destination + size < source, so we know if the areas actually overlap and we really need a backwards copy . Since it is very slow, so we don't do it
+    ;; destination > source. We now check for destination + size < source, so we know if the areas actually overlap and we really need a backwards copy. Since backwards movsb is very slow, we don't do it
     lea r8, [rsi + rdx]
     cmp rax, r8
     jb .more_8_xmm_backwards
